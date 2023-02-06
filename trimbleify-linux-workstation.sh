@@ -508,9 +508,12 @@ if [ "$OS_VENDOR" == "Ubuntu" ]; then
 	systemctl restart systemd-resolved > /dev/null 2>&1
 	#automate patching
 	if [ -d /etc/apt/sources.list.d -a ! -f /etc/apt/sources.list.d/endpoint-verification.list ]; then
-		echo "deb https://packages.cloud.google.com/apt endpoint-verification main" > /etc/apt/sources.list.d/endpoint-verification.list
-		curl -s -m 30 https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - > /dev/null 2>&1
-		apt update > /dev/null 2>&1
+		echo "deb [signed-by=/etc/apt/keyrings/google-packages.gpg.asc] https://packages.cloud.google.com/apt endpoint-verification main" > /etc/apt/sources.list.d/endpoint-verification.list
+		curl -s --fail -m 30 https://packages.cloud.google.com/apt/doc/apt-key.gpg.asc > /etc/apt/keyrings/google-packages.gpg.asc
+		if ! apt update > /dev/null 2>&1 ; then
+		  echo "Apt update failed after installing endpoint-verification sources"
+		  exit 1
+    fi
 		apt -y install endpoint-verification > /dev/null 2>&1
 	fi
 	if [ -f "/etc/apt/apt.conf.d/10periodic" ]; then
